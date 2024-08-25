@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Wedding;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class WeddingController extends Controller
 {
@@ -29,14 +30,16 @@ class WeddingController extends Controller
                 'bride_name' => 'required|string|max:255',
                 'bride_father_name' => 'required|string|max:255',
                 'bride_mother_name' => 'required|string|max:255',
-                'ceremony_time' => 'required|date',
+                'ceremony_time' => 'required|regex:/[0-9][0-9]:[0-9][0-9] - [0-9][0-9]:[0-9][0-9]/i',
+                'ceremony_date' => 'required|date',
                 'ceremony_location' => 'required|string|max:255',
-                'ceremony_coordinates.latitude' => 'required|numeric',
-                'ceremony_coordinates.longitude' => 'required|numeric',
-                'reception_time' => 'required|date',
+                'ceremony_coordinates' => 'required',
+                'reception_time' => 'required|regex:/[0-9][0-9]:[0-9][0-9] - [0-9][0-9]:[0-9][0-9]/i',
+                'reception_date' => 'required|date',
                 'reception_location' => 'required|string|max:255',
-                'reception_coordinates.latitude' => 'required|numeric',
-                'reception_coordinates.longitude' => 'required|numeric',
+                'reception_coordinates' => 'required',
+                'template' => 'required',
+                'story' => 'required',
             ]);
 
             $currentDateTime = now();
@@ -51,12 +54,16 @@ class WeddingController extends Controller
 
             $validated['ceremony_coordinates'] = json_encode($request->input('ceremony_coordinates'));
             $validated['reception_coordinates'] = json_encode($request->input('reception_coordinates'));
+            $validated['ceremony_coordinates'] = $request->input('ceremony_coordinates');
+            $validated['reception_coordinates'] = $request->input('reception_coordinates');
+            $validated['ceremony_time'] = str_replace(" - ", ",", $request->input('ceremony_time'));
+            $validated['reception_time'] = str_replace(" - ", ",", $request->input('reception_time'));
 
             $wedding = Auth::user()->weddings()->create($validated);
 
             return response()->json([
                 'message' => 'Wedding created successfully',
-                'data' => $wedding
+                'data' => $wedding,
             ], 201);
         } catch (\Exception $e) {
             \Log::error('Error creating wedding: ' . $e->getMessage());
@@ -112,6 +119,7 @@ class WeddingController extends Controller
             'reception_location' => 'sometimes|string|max:255',
             'reception_coordinates.latitude' => 'sometimes|numeric',
             'reception_coordinates.longitude' => 'sometimes|numeric',
+            'story' => 'sometimes',
         ]);
 
         $wedding->update($validated);
