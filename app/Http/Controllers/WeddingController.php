@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Wedding;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class WeddingController extends Controller
 {
@@ -38,6 +39,16 @@ class WeddingController extends Controller
                 'reception_coordinates.longitude' => 'required|numeric',
             ]);
 
+            $currentDateTime = now();
+            if (
+                Carbon::parse($validated['ceremony_time'])->lt($currentDateTime) ||
+                Carbon::parse($validated['reception_time'])->lt($currentDateTime)
+            ) {
+                return response()->json([
+                    'message' => 'Ceremony time and reception time must be in the future.'
+                ], 400); 
+            }
+
             $validated['ceremony_coordinates'] = json_encode($request->input('ceremony_coordinates'));
             $validated['reception_coordinates'] = json_encode($request->input('reception_coordinates'));
 
@@ -56,6 +67,7 @@ class WeddingController extends Controller
             ], 500);
         }
     }
+
 
 
 
